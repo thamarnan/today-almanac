@@ -1,3 +1,12 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Thai-Chinese Daily Almanac</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bai+Jamjuree:wght@700&family=Prompt:wght@400;500;600;700&family=Fahkwang:wght@400;500;600&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
 <!-- =====================================================================
   Thai-Chinese Daily Almanac · TRMNL Private Plugin · Full layout
   Target: native PORTRAIT render (480 × 800) — no rotation.
@@ -14,7 +23,6 @@
 ====================================================================== -->
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Anton&family=Prompt:wght@400;500;600;700&family=Fahkwang:wght@400;500;600&family=Sarabun:wght@400;600;700&display=swap');
   #almanac {
     --red: #ff0000;
     width: 480px;
@@ -22,7 +30,8 @@
   }
   #almanac, #almanac * { box-sizing: border-box; }
 </style>
-
+</head>
+<body>
 <div id="almanac" style="background: #ffffff; color: #000000; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; font-family: 'Sarabun', sans-serif; overflow: hidden;">
 
   <!-- ① Header: month + years -->
@@ -284,3 +293,5 @@
 </script>
 
 </div><!-- /#almanac -->
+</body>
+</html>
