@@ -1,0 +1,286 @@
+<!-- =====================================================================
+  Thai-Chinese Daily Almanac · TRMNL Private Plugin · Full layout
+  Target: native PORTRAIT render (480 × 800) — no rotation.
+  Use if/when your device or platform renders portrait natively.
+
+  Plugin settings:
+    • Strategy            : None   (self-contained, client-side JS)
+    • Remove bleed margin : Yes
+    • Enable Dark Mode    : No
+    • Framework CSS ver.  : v3.1.1
+
+  Time zone: FIXED to Bangkok (Asia/Bangkok, UTC+7). Live date —
+  all almanac values recompute automatically at every render.
+====================================================================== -->
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Anton&family=Prompt:wght@400;500;600;700&family=Fahkwang:wght@400;500;600&family=Sarabun:wght@400;600;700&display=swap');
+  #almanac {
+    --red: #ff0000;
+    width: 480px;
+    height: 800px;
+  }
+  #almanac, #almanac * { box-sizing: border-box; }
+</style>
+
+<div id="almanac" style="background: #ffffff; color: #000000; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; font-family: 'Sarabun', sans-serif; overflow: hidden;">
+
+  <!-- ① Header: month + years -->
+  <div style="display: flex; justify-content: space-between; align-items: baseline;">
+    <div style="font-family: 'Bai Jamjuree', sans-serif; font-weight: 700; font-size: 33px; line-height: 1;" id="monthTH"></div>
+    <div style="font-family: 'Bai Jamjuree', sans-serif; font-weight: 700; font-size: 33px; line-height: 1;" id="beTH"></div>
+    <div style="font-family: Georgia, serif; font-weight: bold; font-size: 30px; line-height: 1;" id="monthEN"></div>
+    <div style="font-family: Georgia, serif; font-weight: bold; font-size: 30px; line-height: 1; color: var(--red);" id="yearEN"></div>
+  </div>
+
+  <!-- ② Date block: thai lunar rail / giant day / directions rail -->
+  <div style="display: flex; gap: 8px; align-items: stretch;">
+    <div style="width: 92px; display: flex; flex-direction: column; align-items: center; text-align: center; padding-top: 6px;">
+      <div style="font-size: 21px; font-weight: 400; line-height: 1.2;" id="lunarPhase"></div>
+      <div style="font-family: 'Sarabun', sans-serif; font-size: 42px; line-height: 1.1;" id="lunarNum"></div>
+      <div style="font-size: 21px; font-weight: 400; line-height: 1.2;">ค่ำ</div>
+      <div style="font-size: 21px; font-weight: 400; line-height: 1.2; margin-top: 4px;">เดือน</div>
+      <div style="font-family: 'Sarabun', sans-serif; font-size: 42px; line-height: 1.1;" id="thaiMonthNum"></div>
+      <div style="font-size: 20px; font-weight: 400; line-height: 1.2; margin-top: 4px;" id="yearAnimal"></div>
+    </div>
+    <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
+      <div style="font-family: 'Anton', sans-serif; font-size: 225px; line-height: 0.88; letter-spacing: -4px;" id="day"></div>
+    </div>
+    <div style="width: 92px; display: flex; flex-direction: column; text-align: center; padding: 6px 4px; gap: 8px;">
+      <div style="font-size: 14px; font-weight: 700;">ทิศวันนี้</div>
+      <div style="font-size: 13px; line-height: 1.3;">โชคลาภ<br><b id="wealthTH"></b><br><span id="wealthEN"></span></div>
+      <div style="font-size: 13px; line-height: 1.3;">ความสุข<br><b id="joyTH"></b><br><span id="joyEN"></span></div>
+      <div style="font-size: 13px; line-height: 1.3; color: var(--red);">เลี่ยง<br><b id="avoidDirTH"></b><br><span id="avoidDirEN"></span></div>
+    </div>
+  </div>
+
+  <!-- ③ Weekday banner -->
+  <div style="background: var(--red); color: #ffffff; text-align: center; font-family: 'Fahkwang', sans-serif; font-weight: 700; font-size: 28px; padding: 7px 0 5px 0; line-height: 1;" id="weekday"></div>
+
+  <!-- ④ Three-column almanac grid -->
+  <div style="border: 2px solid var(--red); flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; min-height: 0;">
+    <div style="border-right: 1px solid var(--red); padding: 8px; display: flex; flex-direction: column; gap: 5px;">
+      <div style="font-size: 17px; font-weight: 700; border-bottom: 2px solid #000000; padding-bottom: 3px;">✓ ควรทำ</div>
+      <div id="goodList" style="display: flex; flex-direction: column; gap: 5px;"></div>
+    </div>
+    <div style="border-right: 1px solid var(--red); padding: 8px; display: flex; flex-direction: column; gap: 5px;">
+      <div style="font-size: 17px; font-weight: 700; color: var(--red); border-bottom: 2px solid var(--red); padding-bottom: 3px;">✗ ห้าม</div>
+      <div id="avoidList" style="display: flex; flex-direction: column; gap: 5px;"></div>
+      <div style="margin-top: auto; border-top: 1px solid #000000; padding-top: 5px;">
+        <div style="font-size: 13px; font-weight: 700;">กาลโยคปีนี้</div>
+        <div style="font-size: 12px; line-height: 1.5;">ธงชัย: <span id="kThongchai"></span><br>อธิบดี: <span id="kAthibodi"></span><br><span style="color: var(--red);">อุบาทว์: <span id="kUbat"></span></span><br><span style="color: var(--red);">โลกาวินาศ: <span id="kLoka"></span></span></div>
+      </div>
+    </div>
+    <div style="padding: 6px; display: flex; flex-direction: column; gap: 2px;">
+      <div style="font-size: 22px; font-weight: 700; border-bottom: 2px solid #000000; padding-bottom: 3px; margin-bottom: 2px;">ฤกษ์ยาม</div>
+      <div id="hours" style="display: flex; flex-direction: column; flex: 1;"></div>
+    </div>
+  </div>
+
+  <!-- ⑤ Clash strip -->
+  <div style="border: 2px solid var(--red); display: flex; align-items: center; justify-content: space-between; padding: 6px 14px;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="font-size: 44px; line-height: 1; filter: grayscale(1) contrast(1.2);" id="dayEmoji"></div>
+      <div style="font-size: 18px; line-height: 1.25;"><b id="dayAnimalTH"></b><br><span id="dayAnimalEN"></span></div>
+    </div>
+    <div style="text-align: center; color: var(--red); line-height: 1.1;">
+      <div style="font-family: 'Sarabun', sans-serif; font-weight: 700; font-size: 29px;">ชง</div>
+      <div style="font-size: 16px; font-weight: 700;">ไม่ถูกกัน</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="font-size: 18px; line-height: 1.25; text-align: right;"><b id="clashAnimalTH"></b><br><span id="clashAnimalEN"></span></div>
+      <div style="font-size: 44px; line-height: 1; filter: grayscale(1) contrast(1.2);" id="clashEmoji"></div>
+    </div>
+  </div>
+
+  <!-- ⑥ Verdict footer -->
+  <div style="text-align: center; line-height: 1.25;">
+    <div style="font-family: 'Prompt', sans-serif; font-size: 19px;" id="verdictTH"></div>
+    <div style="font-size: 13px; font-weight: 600;" id="verdictEN"></div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var RED = '#ff0000', BLACK = '#000000', WHITE = '#ffffff';
+
+  // ---- "Now" in Bangkok time (DST-safe via Intl) ----
+  var TZ = 'Asia/Bangkok';
+  var now;
+  try { now = new Date(new Date().toLocaleString('en-US', { timeZone: TZ })); }
+  catch (e) { now = new Date(); }
+  var y = now.getFullYear(), m = now.getMonth() + 1, dd = now.getDate();
+
+  function thDigits(n) { return String(n).replace(/\d/g, function (c) { return '๐๑๒๓๔๕๖๗๘๙'[c]; }); }
+  function p2(n) { return (n < 10 ? '0' : '') + n; }
+  function el(id) { return document.getElementById(id); }
+  function set(id, v) { el(id).textContent = v; }
+
+  var MONTH_TH = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  var MONTH_EN = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+  var WD_TH = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+  var WD_EN = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+  var ANIMAL_TH = ['ชวด','ฉลู','ขาล','เถาะ','มะโรง','มะเส็ง','มะเมีย','มะแม','วอก','ระกา','จอ','กุน'];
+  var ANIMAL_EN = ['Rat','Ox','Tiger','Rabbit','Dragon','Snake','Horse','Goat','Monkey','Rooster','Dog','Pig'];
+  var ANIMAL_EMOJI = ['🐀','🐂','🐅','🐇','🐉','🐍','🐎','🐐','🐒','🐓','🐕','🐖'];
+  var DIR_TH = { N:'เหนือ', S:'ใต้', E:'ตะวันออก', W:'ตะวันตก', NE:'อีสาน', NW:'พายัพ', SE:'อาคเนย์', SW:'หรดี' };
+
+  // ---- Julian Day Number (verified: 1 Jan 2022 → 2459581) ----
+  var JDN = Math.floor(Date.UTC(y, m - 1, dd) / 86400000) + 2440588;
+
+  // ---- Day pillar: (JDN + 49) mod 60 ----
+  var cyc = ((JDN + 49) % 60 + 60) % 60;
+  var dayStem = cyc % 10, dayBranch = cyc % 12;
+  var clashBranch = (dayBranch + 6) % 12;
+
+  // ---- Month branch from solar-term boundaries (approx jie dates) ----
+  var JIE_DAY    = [6, 4, 6, 5, 6, 6, 7, 8, 8, 8, 7, 7];
+  var JIE_BRANCH = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0];
+  var monthBranch = dd >= JIE_DAY[m - 1] ? JIE_BRANCH[m - 1] : (JIE_BRANCH[m - 1] + 11) % 12;
+
+  // ---- Day officer 建除十二神 ----
+  var officer = (dayBranch - monthBranch + 12) % 12;
+  var OFFICERS = [
+    { th:'วันก่อตั้ง', en:'Establish day', vth:'เหมาะเริ่มต้นการใหม่', ven:'Good for starting anew',
+      good:[['เริ่มงานใหม่','Start new work'],['เดินทาง','Travel'],['ลงนามสัญญา','Sign contracts'],['เข้ารับตำแหน่ง','Take office'],['ไหว้สิ่งศักดิ์สิทธิ์','Worship']],
+      avoid:[['ขุดดิน','Digging'],['งานฝังศพ','Burial']] },
+    { th:'วันชำระล้าง', en:'Clear-out day', vth:'เหมาะกำจัดสิ่งเก่า ชำระสะสาง', ven:'Good for cleansing & removal',
+      good:[['ทำความสะอาดใหญ่','Deep cleaning'],['รักษาโรค','Medical treatment'],['สะเดาะเคราะห์','Dispel bad luck'],['ทิ้งของเก่า','Discard old things'],['ตัดผม','Haircut']],
+      avoid:[['งานแต่งงาน','Weddings'],['เปิดกิจการ','Opening business']] },
+    { th:'วันเต็มเปี่ยม', en:'Fullness day', vth:'เหมาะงานฉลองและรับโชค', ven:'Good for celebrations',
+      good:[['งานมงคล','Auspicious ceremonies'],['เปิดกิจการ','Open business'],['รับโชครับทรัพย์','Receive fortune'],['งานฉลอง','Celebrations'],['ลงเสาเอก','Raise first pillar']],
+      avoid:[['งานฝังศพ','Burial'],['ย้ายบ้าน','Moving house']] },
+    { th:'วันราบเรียบ', en:'Balance day', vth:'เหมาะงานปรับปรุงจัดระเบียบ', ven:'Good for leveling & order',
+      good:[['ปรับพื้นที่','Level ground'],['ซ่อมแซมบ้าน','Home repairs'],['เจรจาตกลง','Negotiations'],['จัดระเบียบ','Organizing'],['ทาสีบ้าน','Painting']],
+      avoid:[['เริ่มงานใหญ่','Major launches'],['ฟ้องร้อง','Lawsuits']] },
+    { th:'วันมั่นคง', en:'Stability day', vth:'เหมาะงานผูกพันระยะยาว', ven:'Good for lasting commitments',
+      good:[['แต่งงานหมั้นหมาย','Wedding / engagement'],['ลงเสาเอก','Groundbreaking'],['ทำสัญญา','Contracts'],['รับคนเข้าทำงาน','Hiring'],['เปิดบัญชีออมทรัพย์','Open savings']],
+      avoid:[['เดินทางไกล','Long journeys'],['ฟ้องร้อง','Lawsuits']] },
+    { th:'วันยึดมั่น', en:'Initiative day', vth:'เหมาะงานที่ต้องลงมือจริงจัง', ven:'Good for decisive action',
+      good:[['เซ็นสัญญา','Sign agreements'],['สมัคร/รับงาน','Job applications'],['ซ่อมแซมเครื่องมือ','Repairs'],['จับงานค้าง','Finish pending work'],['ทำบุญบ้าน','House blessing']],
+      avoid:[['ย้ายบ้าน','Moving house'],['เปิดกิจการ','Opening business']] },
+    { th:'วันแตกหัก', en:'Breaking day', vth:'งดงานมงคลทุกชนิด', ven:'Avoid all auspicious events',
+      good:[['รื้อถอน','Demolition'],['ทุบกำแพง','Tear down walls'],['ผ่าตัด (จำเป็น)','Necessary surgery'],['ตัดความสัมพันธ์ร้าย','Cut bad ties']],
+      avoid:[['งานมงคลทุกชนิด','All ceremonies'],['เริ่มต้นสิ่งใหม่','New beginnings']] },
+    { th:'วันพึงระวัง', en:'Caution day', vth:'ทำการใดควรรอบคอบ', ven:'Proceed with care',
+      good:[['ทำบุญไหว้พระ','Merit-making'],['สวดมนต์','Prayers'],['งานเงียบสงบ','Quiet tasks'],['วางแผนงาน','Planning']],
+      avoid:[['ปีนที่สูง','Working at heights'],['เดินทางเสี่ยงภัย','Risky travel']] },
+    { th:'วันสำเร็จ', en:'Success day', vth:'ฤกษ์ดี งานมงคลสำเร็จผล', ven:'Favorable — endeavors succeed',
+      good:[['แต่งงาน','Wedding'],['เปิดกิจการ','Open business'],['ขึ้นบ้านใหม่','Move into new home'],['เริ่มเรียน','Start studies'],['เซ็นสัญญา','Contracts']],
+      avoid:[['ฟ้องร้อง','Lawsuits'],['ทวงหนี้','Debt collection']] },
+    { th:'วันเก็บรับ', en:'Receive day', vth:'เหมาะเก็บเกี่ยวรับผลตอบแทน', ven:'Good for harvesting rewards',
+      good:[['เก็บเกี่ยวผล','Harvest'],['ทวงหนี้','Collect debts'],['เก็บออม','Saving'],['รับมอบงาน','Receive handover'],['ซื้อทรัพย์สิน','Buy assets']],
+      avoid:[['เริ่มงานใหม่','New launches'],['งานฝังศพ','Burial']] },
+    { th:'วันเปิดรับ', en:'Open day', vth:'ฤกษ์ดี เหมาะเริ่มต้นสิ่งใหม่', ven:'Favorable for new beginnings',
+      good:[['เปิดกิจการ','Open business'],['แต่งงาน','Wedding'],['เดินทาง','Travel'],['พบปะเพื่อนฝูง','Meet friends'],['ขึ้นบ้านใหม่','Move into new home']],
+      avoid:[['ขุดดิน','Digging'],['งานฝังศพ','Burial']] },
+    { th:'วันปิดงาน', en:'Close day', vth:'เหมาะปิดงานเก็บงำ พักผ่อน', ven:'Good for closing & rest',
+      good:[['ปิดบัญชี','Close accounts'],['เก็บของเข้าที่','Store away'],['อุดรอยรั่ว','Seal leaks'],['พักผ่อน','Rest']],
+      avoid:[['เปิดกิจการ','Opening business'],['เดินทางไกล','Long journeys']] }
+  ];
+  var off = OFFICERS[officer];
+
+  // ---- Directions ----
+  var joy = ['NE','NW','SW','S','SE'][dayStem % 5];
+  var wealth = ['SE','W','N','E','S'][Math.floor(dayStem / 2)];
+  var cnYear = (m > 2 || (m === 2 && dd >= 4)) ? y : y - 1;
+  var yearBranchCN = ((cnYear - 4) % 12 + 12) % 12;
+  var BRANCH_DIR = ['N','NE','NE','E','SE','SE','S','SW','SW','W','NW','NW'];
+  var OPP = { N:'S', S:'N', E:'W', W:'E', NE:'SW', SW:'NE', NW:'SE', SE:'NW' };
+  var avoidDir = OPP[BRANCH_DIR[yearBranchCN]];
+
+  // ---- Hour luck: Yellow/Black Path (黃黑道) ----
+  var ybStart = ((dayBranch % 6) * 2 + 8) % 12;
+  var YELLOW = [0, 1, 4, 5, 7, 10];
+  var nowHB = Math.floor(((now.getHours() + 1) % 24) / 2);
+  var hoursHtml = '';
+  for (var hb = 0; hb < 12; hb++) {
+    var goodHour = YELLOW.indexOf((hb - ybStart + 12) % 12) >= 0;
+    var isNow = hb === nowHB;
+    var t = hb === 0 ? '23–01' : p2(hb * 2 - 1) + '–' + p2(hb * 2 + 1);
+    var bg = isNow ? (goodHour ? RED : BLACK) : WHITE;
+    var fg = isNow ? WHITE : BLACK;
+    var rc = isNow ? WHITE : (goodHour ? RED : BLACK);
+    hoursHtml += '<div style="display:flex;justify-content:space-between;align-items:center;flex:1;font-size:17px;padding:0 5px;background:' + bg + ';color:' + fg + ';">' +
+      '<span style="font-weight:600;">' + t + '</span>' +
+      '<span style="font-weight:700;color:' + rc + ';">' + (goodHour ? 'ดี' : 'ร้าย') + '</span></div>';
+  }
+  el('hours').innerHTML = hoursHtml;
+
+  // ---- Thai lunar (mean synodic month approximation) ----
+  var SYNODIC = 29.530588853, NM_EPOCH = 2451550.26;
+  var age = (((JDN - NM_EPOCH) % SYNODIC) + SYNODIC) % SYNODIC;
+  var lday = Math.floor(age) + 1;
+  var waxing = lday <= 15;
+  var lunarNum = waxing ? lday : Math.min(lday - 15, 15);
+  var nmDate = new Date((JDN - age - 2440588) * 86400000);
+  var thaiMonthNum = ((nmDate.getUTCMonth() + 2) % 12) + 1;
+
+  // ---- Thai year animal (Songkran boundary ~Apr 13) ----
+  var thYear = (m > 4 || (m === 4 && dd >= 13)) ? y : y - 1;
+  var yearAnimal = ((thYear - 4) % 12 + 12) % 12;
+
+  // ---- กาลโยค (จ.ศ. boundary ~Apr 16) ----
+  var csYear = ((m > 4 || (m === 4 && dd >= 16)) ? y : y - 1) - 638;
+  function remToGd(r) { return (r + 6) % 7; }
+  var kThongchai = remToGd((csYear * 10 + 3) % 7);
+  var kAthibodi  = remToGd((csYear % 498) % 7);
+  var kUbat      = remToGd((csYear * 10 + 2) % 7);
+  var kLoka      = remToGd((csYear + 1120) % 7);
+  var gd = now.getDay();
+
+  // ---- Verdict ----
+  var verdictTH, verdictEN, verdictColor;
+  if (gd === kUbat || gd === kLoka) {
+    verdictTH = 'วันนี้เป็น' + (gd === kUbat ? 'วันอุบาทว์' : 'วันโลกาวินาศ') + ' — งดงานมงคล';
+    verdictEN = 'Inauspicious day — postpone important events';
+    verdictColor = RED;
+  } else if (gd === kThongchai || gd === kAthibodi) {
+    verdictTH = 'วันนี้เป็น' + (gd === kThongchai ? 'วันธงชัย' : 'วันอธิบดี') + ' — ' + off.vth;
+    verdictEN = (gd === kThongchai ? 'Victory Flag day' : 'Athibodi day') + ' — ' + off.ven;
+    verdictColor = RED;
+  } else {
+    verdictTH = 'วันนี้เป็น' + off.th + ' — ' + off.vth;
+    verdictEN = off.en + ' — ' + off.ven;
+    verdictColor = BLACK;
+  }
+
+  // ---- Fill DOM ----
+  set('monthTH', MONTH_TH[m - 1]);
+  set('beTH', thDigits(y + 543));
+  set('monthEN', MONTH_EN[m - 1]);
+  set('yearEN', y);
+  set('day', dd);
+  set('weekday', WD_TH[gd] + ' · ' + WD_EN[gd]);
+  set('lunarPhase', waxing ? 'ขึ้น' : 'แรม');
+  set('lunarNum', lunarNum);
+  set('thaiMonthNum', thaiMonthNum);
+  set('yearAnimal', 'ปี' + ANIMAL_TH[yearAnimal]);
+  set('wealthTH', DIR_TH[wealth]); set('wealthEN', wealth);
+  set('joyTH', DIR_TH[joy]); set('joyEN', joy);
+  set('avoidDirTH', DIR_TH[avoidDir]); set('avoidDirEN', avoidDir);
+  set('dayEmoji', ANIMAL_EMOJI[dayBranch]);
+  set('dayAnimalTH', 'วัน' + ANIMAL_TH[dayBranch]);
+  set('dayAnimalEN', ANIMAL_EN[dayBranch] + ' day');
+  set('clashEmoji', ANIMAL_EMOJI[clashBranch]);
+  set('clashAnimalTH', 'คนปี' + ANIMAL_TH[clashBranch]);
+  set('clashAnimalEN', ANIMAL_EN[clashBranch] + ' years');
+  set('kThongchai', WD_TH[kThongchai]);
+  set('kAthibodi', WD_TH[kAthibodi]);
+  set('kUbat', WD_TH[kUbat]);
+  set('kLoka', WD_TH[kLoka]);
+  set('verdictTH', verdictTH);
+  el('verdictTH').style.color = verdictColor;
+  set('verdictEN', verdictEN);
+
+  function liHtml(pair) {
+    return '<div style="font-size:14px;line-height:1.2;font-weight:400;">' + pair[0] +
+      '<br><span style="font-weight:400;font-size:11px;">' + pair[1] + '</span></div>';
+  }
+  el('goodList').innerHTML = off.good.map(liHtml).join('');
+  el('avoidList').innerHTML = off.avoid.map(liHtml).join('');
+})();
+</script>
+
+</div><!-- /#almanac -->
