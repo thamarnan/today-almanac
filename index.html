@@ -17,10 +17,36 @@
     overflow: hidden;
     font-family: 'Sarabun', sans-serif;
   }
-  #stage { transform-origin: center center; }
+  #stage { transform-origin: center center; position: relative; width: 480px; height: 800px; }
   #wx { --red: #ff0000; }
   #wx, #wx * { box-sizing: border-box; }
   #wx .nowrap { white-space: nowrap; }
+
+  #loader {
+    position: absolute; inset: 0; z-index: 20; background: #ffffff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    transition: opacity .45s ease; font-family: 'Sarabun', sans-serif;
+  }
+  #loader .spin {
+    width: 48px; height: 48px; border: 4px solid #000; border-top-color: transparent;
+    border-radius: 50%; animation: spin .9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loader .track { width: 180px; height: 8px; border: 1.5px solid #000; border-radius: 4px; overflow: hidden; background: #fff; }
+  #loader .bar { height: 100%; width: 10%; background: #000; transition: width .4s ease; }
+  #dots::after { content: ''; animation: dots 1.2s steps(4, end) infinite; }
+  @keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+
+  #permPrompt {
+    position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 25; display: none;
+    flex-direction: column; gap: 9px; padding: 16px; background: #ffffff; border: 2px solid #ff0000;
+    font-family: 'Sarabun', sans-serif; text-align: center; box-shadow: 0 6px 26px rgba(0,0,0,.22);
+  }
+  #permPrompt button {
+    font-family: 'Sarabun', sans-serif; font-size: 15px; font-weight: 700; color: #fff; background: #ff0000;
+    border: none; border-radius: 5px; padding: 9px 14px; cursor: pointer;
+  }
+  #permPrompt button:active { opacity: .85; }
 </style>
 </head>
 <body>
@@ -136,6 +162,22 @@
   </div>
 
 </div>
+
+  <div id="loader">
+    <div class="spin"></div>
+    <div style="text-align: center; line-height: 1.4;">
+      <div style="font-size: 19px; font-weight: 700;"><span id="loadMsgTH">กำลังโหลด</span><span id="dots"></span></div>
+      <div id="loadMsgEN" style="font-size: 13px; color: #666;">Loading</div>
+    </div>
+    <div class="track"><div class="bar" id="loadBar"></div></div>
+  </div>
+
+  <div id="permPrompt">
+    <div style="font-size: 16px; font-weight: 700;">ขอสิทธิ์ตำแหน่ง · Location access</div>
+    <div style="font-size: 12px; color: #444; line-height: 1.45;">อนุญาตตำแหน่งเพื่อแสดงสภาพอากาศที่ตรงกับคุณ<br>Allow location to show weather where you are.</div>
+    <button onclick="window.__retryLoc()">อนุญาต · Allow / ลองใหม่ Try again</button>
+  </div>
+
 </div>
 
 <script>
@@ -438,7 +480,7 @@
       + '&hourly=temperature_2m,relative_humidity_2m,uv_index,weather_code,precipitation_probability,precipitation'
       + '&daily=sunrise,sunset,uv_index_max,temperature_2m_max,temperature_2m_min,precipitation_sum'
       + '&timezone=auto&forecast_days=2&temperature_unit=celsius&wind_speed_unit=kmh&precipitation_unit=mm';
-    fetch(url).then(function (r) { return r.json(); }).then(render).catch(function () {
+    return fetch(url).then(function (r) { return r.json(); }).then(render).catch(function () {
       set('curCondTH', 'โหลดไม่สำเร็จ data error');
     });
   }
@@ -472,8 +514,8 @@
     return new Promise(function (resolve) {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-          function (p) { applyNames(p.coords.latitude, p.coords.longitude, '').then(resolve, resolve); },
-          function () { ipFallback().then(resolve, resolve); },
+          function (p) { hidePerm(); applyNames(p.coords.latitude, p.coords.longitude, '').then(resolve, resolve); },
+          function (err) { if (err && err.code === 1) { showPerm(); } ipFallback().then(resolve, resolve); },
           { timeout: 7000, maximumAge: 600000, enableHighAccuracy: false }
         );
       } else {
@@ -481,6 +523,19 @@
       }
     });
   }
+
+  // ---------- loading overlay + permission prompt ----------
+  function setBar(pct) { var b = el('loadBar'); if (b) b.style.width = pct + '%'; }
+  function setLoad(th, en, pct) { set('loadMsgTH', th); set('loadMsgEN', en); if (pct != null) setBar(pct); }
+  function showLoader() { var l = el('loader'); if (l) { l.style.display = 'flex'; l.style.opacity = '1'; } }
+  function hideLoader() {
+    var l = el('loader'); if (!l) return;
+    setBar(100);
+    l.style.opacity = '0';
+    setTimeout(function () { l.style.display = 'none'; }, 460);
+  }
+  function showPerm() { var p = el('permPrompt'); if (p) p.style.display = 'flex'; }
+  function hidePerm() { var p = el('permPrompt'); if (p) p.style.display = 'none'; }
 
   // ---------- scale to fit viewport ----------
   function fit() {
@@ -495,8 +550,21 @@
     document.fonts.ready.then(function () { if (lastData) render(lastData); });
   }
 
-  // refresh every 15 min so the clock/now-markers stay live
-  detectLocation().then(fetchWeather);
+  // ---------- boot: show progress through detect → fetch → done ----------
+  function boot() {
+    showLoader();
+    setLoad('กำลังหาตำแหน่ง', 'Finding your location', 35);
+    return detectLocation().then(function () {
+      setLoad('ดึงข้อมูลอากาศ', 'Fetching weather data', 70);
+      return fetchWeather();
+    }).then(function () {
+      hideLoader();
+    });
+  }
+  window.__retryLoc = function () { hidePerm(); boot(); };
+
+  boot();
+  // refresh every 15 min so the clock / now-markers stay live
   setInterval(fetchWeather, 15 * 60 * 1000);
 })();
 </script>
