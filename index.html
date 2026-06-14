@@ -1,65 +1,51 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Weather Almanac · Auto</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bai+Jamjuree:wght@400;600;700&family=Fahkwang:wght@400;600;700&family=Prompt:wght@400;500;600&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>พยากรณ์อากาศ · Modern Weather Calendar</title>
 <style>
-  html, body { margin: 0; height: 100%; }
+  html, body { margin: 0; }
   body {
-    background: #d9d9d9;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    font-family: 'Sarabun', sans-serif;
+    background: #c9c6bd; min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 28px 16px; font-family: 'Sarabun', sans-serif;
   }
-  #stage { transform-origin: center center; position: relative; width: 480px; height: 800px; }
-  #wx { --red: #ff0000; }
-  #wx, #wx * { box-sizing: border-box; }
-  #wx .nowrap { white-space: nowrap; }
-
-  #loader {
-    position: absolute; inset: 0; z-index: 20; background: #ffffff;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
-    transition: opacity .45s ease; font-family: 'Sarabun', sans-serif;
-  }
-  #loader .spin {
-    width: 48px; height: 48px; border: 4px solid #000; border-top-color: transparent;
-    border-radius: 50%; animation: spin .9s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  #loader .track { width: 180px; height: 8px; border: 1.5px solid #000; border-radius: 4px; overflow: hidden; background: #fff; }
-  #loader .bar { height: 100%; width: 10%; background: #000; transition: width .4s ease; }
-  #dots::after { content: ''; animation: dots 1.2s steps(4, end) infinite; }
-  @keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
-
-  #permPrompt {
-    position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 25; display: none;
-    flex-direction: column; gap: 9px; padding: 16px; background: #ffffff; border: 2px solid #ff0000;
-    font-family: 'Sarabun', sans-serif; text-align: center; box-shadow: 0 6px 26px rgba(0,0,0,.22);
-  }
-  #permPrompt button {
-    font-family: 'Sarabun', sans-serif; font-size: 15px; font-weight: 700; color: #fff; background: #ff0000;
-    border: none; border-radius: 5px; padding: 9px 14px; cursor: pointer;
-  }
-  #permPrompt button:active { opacity: .85; }
+  #wx { box-shadow: 0 10px 50px rgba(0,0,0,0.22); }
+  @media print { body { background: #fff; padding: 0; } #wx { box-shadow: none; } }
 </style>
 </head>
 <body>
+<!-- =====================================================================
+  Modern Weather Dashboard · TRMNL Private Plugin
+  Target: TRMNL OG (B/W/R/Y) — native PORTRAIT 480 × 800 (no rotation)
+  Location: FIXED to Rowland Heights, CA (US Pacific)
 
-<div id="stage">
-<div id="wx" style="width: 480px; height: 800px; background: #ffffff; color: #000000; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; font-family: 'Sarabun', sans-serif; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,0.25);">
+  Plugin settings:
+    • Strategy            : None   (self-contained; data fetched client-side)
+    • Remove bleed margin : Yes
+    • Framework CSS ver.  : v3.1.1
+
+  Data: Open-Meteo (https://open-meteo.com) — free, no API key, CORS-enabled.
+  Units: default °F / mph; override with an optional form field `unit_system`
+         (Imperial | Metric). Moon phase is computed from the date.
+====================================================================== -->
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Anton&family=Bai+Jamjuree:wght@400;600;700&family=Fahkwang:wght@400;600;700&family=Prompt:wght@400;500;600&family=Sarabun:wght@400;600;700&display=swap');
+  #wx { --red: #ff0000; }
+  #wx, #wx * { box-sizing: border-box; }
+  #wx .muted { color: #000; }
+</style>
+
+<div id="wx" style="width: 480px; height: 800px; background: #ffffff; color: #000000; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; font-family: 'Sarabun', sans-serif; overflow: hidden;">
 
   <!-- ① Almanac header: month + years -->
   <div style="display: flex; justify-content: space-between; align-items: baseline;">
-    <span style="font-family: 'Bai Jamjuree', sans-serif; font-weight: 700; font-size: 24px;" id="monthTH">—</span>
-    <span style="font-family: 'Bai Jamjuree', sans-serif; font-weight: 700; font-size: 24px; color: var(--red);" id="beTH">—</span>
-    <span style="font-family: Georgia, serif; font-weight: bold; font-size: 22px;" id="monthEN">—</span>
-    <span style="font-family: Georgia, serif; font-weight: bold; font-size: 22px; color: var(--red);" id="yearEN">—</span>
+    <span style="font-family: 'Bai Jamjuree', sans-serif; font-weight: 700; font-size: 33px; line-height: 1;" id="monthTH">—</span>
+    <span style="font-family: 'Bai Jamjuree', sans-serif; font-weight: 700; font-size: 33px; line-height: 1; color: var(--red);" id="beTH">—</span>
+    <span style="font-family: Georgia, serif; font-weight: bold; font-size: 30px; line-height: 1;" id="monthEN">—</span>
+    <span style="font-family: Georgia, serif; font-weight: bold; font-size: 30px; line-height: 1; color: var(--red);" id="yearEN">—</span>
   </div>
 
   <!-- ② Conditions rail / big date / wind compass -->
@@ -90,45 +76,45 @@
   </div>
 
   <!-- ③ Banner: weekday in 3 languages (Thai · 中文 · EN) -->
-  <div style="background: var(--red); color: #ffffff; text-align: center; font-family: 'Fahkwang', sans-serif; font-weight: 700; font-size: 24px; padding: 6px 0 4px 0; line-height: 1; white-space: nowrap;" id="weekday">—</div>
+  <div style="background: var(--red); color: #ffffff; text-align: center; font-family: 'Fahkwang', sans-serif; font-weight: 700; font-size: 24px; padding: 6px 0 4px 0; line-height: 1;" id="weekday">—</div>
 
   <!-- ④ Three-column grid -->
   <div style="border: 2px solid #000000; flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; min-height: 0; overflow: hidden;">
     <!-- UV daylight curve -->
-    <div style="border-right: 2px solid #000000; padding: 7px 8px; display: flex; flex-direction: column; gap: 4px; min-height: 0; overflow: hidden;">
+    <div style="border-right: 2px solid #000000; padding: 7px 8px; display: flex; flex-direction: column; gap: 4px;">
       <div style="font-size: 12px; font-weight: 700; border-bottom: 2px solid #000000; padding-bottom: 2px; white-space: nowrap;">ดัชนียูวี · UV Index</div>
       <div id="uvSpark" style="margin-top: 2px;"></div>
-      <div style="font-size: 10px; color: #000; line-height: 1.1; text-align: center; white-space: nowrap;">ช่วงกลางวัน · daylight</div>
-      <div style="text-align: center; font-size: 13px; font-weight: 700; padding: 3px 0; border-radius: 3px; margin-top: 2px; white-space: nowrap;" id="uvRisk">—</div>
+      <div style="font-size: 10px; color: #000; line-height: 1.1; text-align: center;">ช่วงกลางวัน · daylight</div>
+      <div style="text-align: center; font-size: 13px; font-weight: 700; padding: 3px 0; border-radius: 3px; margin-top: 2px;" id="uvRisk">—</div>
       <div style="display: flex; flex-direction: column; gap: 2px; padding: 3px 5px; border: 1.5px solid #000; background-image: radial-gradient(circle, #000 0.6px, transparent 0.6px); background-size: 3px 3px; background-color: #fff;">
         <div style="display: flex; justify-content: space-between; align-items: baseline;">
-          <span style="font-size: 13px; color: #000; background:#fff; padding:0 2px; white-space: nowrap;">ตอนนี้ now</span>
+          <span style="font-size: 13px; color: #000; background:#fff; padding:0 2px;">ตอนนี้ now</span>
           <span style="font-family: 'Prompt', sans-serif; font-size: 22px; line-height: 1;" id="uvNow">—</span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: baseline; border-top: 1px dashed #000; padding-top: 2px;">
-          <span style="font-size: 13px; color: #000; background:#fff; padding:0 2px; white-space: nowrap;">สูงสุด max</span>
+          <span style="font-size: 13px; color: #000; background:#fff; padding:0 2px;">สูงสุด max</span>
           <span style="font-family: 'Prompt', sans-serif; font-size: 18px; line-height: 1;" id="uvMax">—</span>
         </div>
       </div>
       <div id="miniCal" style="margin-top: 8px; border-top: 2px solid #000; padding-top: 5px;"></div>
     </div>
     <!-- current summary + hourly temp -->
-    <div style="border-right: 2px solid #000000; padding: 7px 8px; display: flex; flex-direction: column; gap: 3px; min-height: 0; overflow: hidden;">
+    <div style="border-right: 2px solid #000000; padding: 7px 8px; display: flex; flex-direction: column; gap: 3px;">
       <div style="display: flex; flex-direction: column; align-items: center; text-align: center; padding-bottom: 5px; border-bottom: 2px solid var(--red);">
         <div id="curIcon" style="display: flex; align-items: center; height: 30px;"></div>
         <div style="font-family: 'Prompt', sans-serif; font-size: 38px; line-height: 1;" id="curTemp">—</div>
         <div style="font-family: 'Prompt', sans-serif; font-size: 16px; color: #000; line-height: 1.15;" id="curTempC">—</div>
         <div style="font-size: 11px; font-weight: 600; line-height: 1.2; margin-top: 3px; white-space: nowrap;" id="curCondTH">—</div>
       </div>
-      <div style="font-size: 12px; font-weight: 700; color: var(--red); margin-top: 1px; white-space: nowrap;">รายชั่วโมง · hourly</div>
+      <div style="font-size: 12px; font-weight: 700; color: var(--red); margin-top: 1px;">รายชั่วโมง · hourly</div>
       <div id="hourlyTemp" style="display: flex; flex-direction: column; flex: 1; overflow: hidden; min-height: 0;"></div>
     </div>
     <!-- humidity + precipitation -->
-    <div style="padding: 7px 8px; display: flex; flex-direction: column; gap: 2px; min-height: 0; overflow: hidden;">
-      <div style="font-size: 15px; font-weight: 700; border-bottom: 2px solid #000000; padding-bottom: 2px; white-space: nowrap;">ชื้น · Humidity</div>
+    <div style="padding: 7px 8px; display: flex; flex-direction: column; gap: 2px;">
+      <div style="font-size: 15px; font-weight: 700; border-bottom: 2px solid #000000; padding-bottom: 2px;">ชื้น · Humidity</div>
       <div id="humCol" style="display: flex; flex-direction: column;"></div>
-      <div style="font-size: 14px; font-weight: 700; border-bottom: 2px solid #000000; padding-bottom: 2px; margin-top: 6px; white-space: nowrap;">ฝน · Precip.</div>
-      <div style="font-size: 11px; color: #000; line-height: 1.25; white-space: nowrap;" id="precipSum">—</div>
+      <div style="font-size: 14px; font-weight: 700; border-bottom: 2px solid #000000; padding-bottom: 2px; margin-top: 6px;">ฝน · Precipitation</div>
+      <div style="font-size: 11px; color: #000; line-height: 1.25;" id="precipSum">—</div>
       <div id="precipCol" style="display: flex; flex-direction: column;"></div>
     </div>
   </div>
@@ -136,92 +122,76 @@
   <!-- ⑤ Sunrise / sunset -->
   <div style="border: 2px solid var(--red); display: flex; align-items: center; justify-content: space-between; padding: 3px 12px; gap: 12px;">
     <div style="text-align: center; line-height: 1.1;">
-      <div style="font-size: 12px; color: #000; white-space: nowrap;">ขึ้น · sunrise</div>
+      <div style="font-size: 12px; color: #000;">ขึ้น · sunrise</div>
       <div style="font-family: 'Prompt', sans-serif; font-size: 22px;" id="sunriseT">—</div>
     </div>
     <div id="sunArc" style="flex: 1; display: flex; justify-content: center;"></div>
     <div style="text-align: center; line-height: 1.1;">
-      <div style="font-size: 12px; color: #000; white-space: nowrap;">ตก · sunset</div>
+      <div style="font-size: 12px; color: #000;">ตก · sunset</div>
       <div style="font-family: 'Prompt', sans-serif; font-size: 22px;" id="sunsetT">—</div>
     </div>
   </div>
 
-  <!-- ⑥ Moon + location -->
+  <!-- ⑥ Moon + location (moved to bottom) -->
   <div style="display: flex; align-items: center; justify-content: space-between; line-height: 1.15;">
     <div style="display: flex; align-items: center; gap: 12px;">
       <div id="moonIcon"></div>
       <div style="text-align: left;">
-        <div style="font-family: 'Prompt', sans-serif; font-size: 17px; white-space: nowrap;" id="moonPhaseTH">—</div>
-        <div style="font-size: 12px; color: #000; white-space: nowrap;"><span id="moonPhaseEN">—</span> · <span id="moonIllum">—</span> สว่าง</div>
+        <div style="font-family: 'Prompt', sans-serif; font-size: 17px;" id="moonPhaseTH">—</div>
+        <div style="font-size: 12px; color: #000;"><span id="moonPhaseEN">—</span> · <span id="moonIllum">—</span> สว่าง</div>
       </div>
     </div>
     <div style="text-align: right; line-height: 1.25;">
-      <div style="font-family: 'Bai Jamjuree', sans-serif; font-weight: 700; font-size: 15px; white-space: nowrap;" id="cityTH">—</div>
-      <div style="font-size: 10px; color: #000; white-space: nowrap;"><span id="cityEN">—</span> · อัปเดต <span id="updatedT">—</span></div>
+      <div style="font-family: 'Bai Jamjuree', sans-serif; font-weight: 700; font-size: 15px;" id="cityTH">—</div>
+      <div style="font-size: 10px; color: #000;"><span id="cityEN">—</span> · อัปเดต <span id="updatedT">—</span></div>
     </div>
   </div>
 
 </div>
-
-  <div id="loader">
-    <div class="spin"></div>
-    <div style="text-align: center; line-height: 1.4;">
-      <div style="font-size: 19px; font-weight: 700;"><span id="loadMsgTH">กำลังโหลด</span><span id="dots"></span></div>
-      <div id="loadMsgEN" style="font-size: 13px; color: #666;">Loading</div>
-    </div>
-    <div class="track"><div class="bar" id="loadBar"></div></div>
-  </div>
-
-  <div id="permPrompt">
-    <div style="font-size: 16px; font-weight: 700;">ขอสิทธิ์ตำแหน่ง · Location access</div>
-    <div style="font-size: 12px; color: #444; line-height: 1.45;">อนุญาตตำแหน่งเพื่อแสดงสภาพอากาศที่ตรงกับคุณ<br>Allow location to show weather where you are.</div>
-    <button onclick="window.__retryLoc()">อนุญาต · Allow / ลองใหม่ Try again</button>
-  </div>
-
-</div>
-
 <script>
 (function () {
   var RED = '#ff0000';
 
-  // ---------- auto-detected location (defaults to Rowland Heights) ----------
-  var DETECT = { lat: 33.976, lon: -117.905, cityEN: 'Rowland Heights', cityTH: 'โรว์แลนด์ไฮตส์' };
-
-  // built-in cities for ?city= override (works on plain http, no geolocation needed)
+  // ---------- location & units ----------
   var CITY = {
-    'rowland heights': [33.976, -117.905, 'โรว์แลนด์ไฮตส์', 'Rowland Heights'],
-    'irvine': [33.6846, -117.8265, 'เออร์ไวน์', 'Irvine'],
-    'la crescenta': [34.2322, -118.2390, 'ลาเครสเซนตา', 'La Crescenta'],
-    'bangkok': [13.7563, 100.5018, 'กรุงเทพฯ', 'Bangkok'],
-    'phuket': [7.8804, 98.3923, 'ภูเก็ต', 'Phuket'],
-    'krabi': [8.0863, 98.9063, 'กระบี่', 'Krabi'],
-    'los angeles': [34.0522, -118.2437, 'ลอสแอนเจลิส', 'Los Angeles'],
-    'new york': [40.7128, -74.0060, 'นิวยอร์ก', 'New York'],
-    'london': [51.5072, -0.1276, 'ลอนดอน', 'London'],
-    'tokyo': [35.6762, 139.6503, 'โตเกียว', 'Tokyo'],
-    'singapore': [1.3521, 103.8198, 'สิงคโปร์', 'Singapore']
+    'Rowland Heights': [33.976, -117.905, 'America/Los_Angeles', 'โรว์แลนด์ไฮตส์'],
+    'Rowland Heights, CA, USA': [33.976, -117.905, 'America/Los_Angeles', 'โรว์แลนด์ไฮตส์'],
+    'Irvine': [33.6846, -117.8265, 'America/Los_Angeles', 'เออร์ไวน์'],
+    'Irvine, CA, USA': [33.6846, -117.8265, 'America/Los_Angeles', 'เออร์ไวน์'],
+    'La Crescenta': [34.2322, -118.2390, 'America/Los_Angeles', 'ลาเครสเซนตา'],
+    'La Crescenta, CA, USA': [34.2322, -118.2390, 'America/Los_Angeles', 'ลาเครสเซนตา'],
+    'Bangkok': [13.7563, 100.5018, 'Asia/Bangkok', 'กรุงเทพฯ'],
+    'Bangkok, Thailand': [13.7563, 100.5018, 'Asia/Bangkok', 'กรุงเทพฯ'],
+    'Phuket': [7.8804, 98.3923, 'Asia/Bangkok', 'ภูเก็ต'],
+    'Phuket, Thailand': [7.8804, 98.3923, 'Asia/Bangkok', 'ภูเก็ต'],
+    'Krabi': [8.0863, 98.9063, 'Asia/Bangkok', 'กระบี่'],
+    'Krabi, Thailand': [8.0863, 98.9063, 'Asia/Bangkok', 'กระบี่'],
+    'Los Angeles, CA, USA': [34.0522, -118.2437, 'America/Los_Angeles', 'ลอสแอนเจลิส'],
+    'New York, NY, USA': [40.7128, -74.0060, 'America/New_York', 'นิวยอร์ก'],
+    'London, UK': [51.5072, -0.1276, 'Europe/London', 'ลอนดอน'],
+    'Tokyo, Japan': [35.6762, 139.6503, 'Asia/Tokyo', 'โตเกียว'],
+    'Singapore': [1.3521, 103.8198, 'Asia/Singapore', 'สิงคโปร์']
   };
 
-  // ?lat=..&lon=..&name=..  or  ?city=Bangkok  pins location without geolocation
-  function queryOverride() {
-    var p = new URLSearchParams(location.search);
-    var lat = parseFloat(p.get('lat')), lon = parseFloat(p.get('lon'));
-    if (!isNaN(lat) && !isNaN(lon)) {
-      DETECT.lat = lat; DETECT.lon = lon;
-      DETECT.cityEN = p.get('name') || 'Custom';
-      DETECT.cityTH = p.get('name') || DETECT.cityEN;
-      return true;
-    }
-    var city = p.get('city');
-    if (city) {
-      var c = CITY[city.toLowerCase().trim()];
-      if (c) { DETECT.lat = c[0]; DETECT.lon = c[1]; DETECT.cityTH = c[2]; DETECT.cityEN = c[3]; return true; }
-    }
-    return false;
-  }
+  // EDIT THIS LINE per version (V1 = 'Bangkok', V3 = '{{ timezone_city }}'):
+  var FORCED_CITY = (function () {
+    try {
+      var c = (new URLSearchParams(location.search).get('city') || '').trim();
+      if (!c) return 'Rowland Heights';
+      var lc = c.toLowerCase();
+      for (var k in CITY) { if (k.toLowerCase() === lc) return k; }
+      for (var k2 in CITY) { if (k2.toLowerCase().indexOf(lc) === 0) return k2; }
+      return 'Rowland Heights';
+    } catch (e) { return 'Rowland Heights'; }
+  })();
+  var UNIT_SYSTEM = 'Imperial';
 
-  // display config (English-primary / Thai-secondary, 12-hour clock)
-  var metric = false;
+  var cityName = (FORCED_CITY && CITY[FORCED_CITY]) ? FORCED_CITY : 'Rowland Heights';
+  var loc = CITY[cityName];
+  var metric = String(UNIT_SYSTEM).toLowerCase().indexOf('metric') >= 0;
+  var tUnit = metric ? 'celsius' : 'fahrenheit';
+  var wUnit = metric ? 'kmh' : 'mph';
+  var wLabel = metric ? 'กม/ชม' : 'mph';
 
   function el(id) { return document.getElementById(id); }
   function set(id, v) { var n = el(id); if (n) n.textContent = v; }
@@ -231,14 +201,18 @@
   function mmToIn(mm) { return mm * 0.0393701; }
 
   var MONTH_TH = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  var MONTH_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
   var MONTH_EN_FULL = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
   var WD_TH = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+  var WD_EN = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  var CN_WD = ['日','一','二','三','四','五','六'];
   var CN_WD_FULL = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
   var WD_EN_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   var ANIMAL_TH = ['ชวด','ฉลู','ขาล','เถาะ','มะโรง','มะเส็ง','มะเมีย','มะแม','วอก','ระกา','จอ','กุน'];
   var CARD = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
   var THAI_DIR8 = ['เหนือ','อีสาน','ตะวันออก','อาคเนย์','ใต้','หรดี','ตะวันตก','พายัพ'];
 
+  // ---------- Thai lunar / year-animal (mean-moon, same as almanac) ----------
   function computeAlmanac(d) {
     var y = d.getFullYear(), m = d.getMonth() + 1, dd = d.getDate();
     var JDN = Math.floor(Date.UTC(y, m - 1, dd) / 86400000) + 2440588;
@@ -253,6 +227,7 @@
     return { phase: waxing ? 'ขึ้น' : 'แรม', lunarNum: lunarNum, thaiMonthNum: thaiMonthNum, yearAnimalTH: ANIMAL_TH[ya] };
   }
 
+  // ---------- WMO weather code → icon + label ----------
   function wmo(code, isDay) {
     var c = +code;
     if (c === 0) return { ic: isDay ? 'sun' : 'moon', th: 'แจ่มใส', en: 'Clear' };
@@ -269,6 +244,7 @@
     return { ic: 'cloud', th: '—', en: '—' };
   }
 
+  // ---------- SVG icon set (black line, e-ink friendly) ----------
   function icon(type, s) {
     var sw = Math.max(1.5, s / 16);
     var o = '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="' + sw + '" stroke-linecap="round" stroke-linejoin="round">';
@@ -280,11 +256,12 @@
     if (type === 'fog') return o + '<line x1="4" y1="9" x2="20" y2="9"/><line x1="3" y1="13" x2="21" y2="13"/><line x1="5" y1="17" x2="19" y2="17"/></svg>';
     if (type === 'drizzle') return o + cloud + '<line x1="9" y1="20" x2="8" y2="22"/><line x1="14" y1="20" x2="13" y2="22"/></svg>';
     if (type === 'rain') return o + cloud + '<line x1="8.5" y1="19.5" x2="7" y2="22.5"/><line x1="12" y1="19.5" x2="10.5" y2="22.5"/><line x1="15.5" y1="19.5" x2="14" y2="22.5"/></svg>';
-    if (type === 'snow') return o + cloud + '<circle cx="9" cy="21" r="0.6" fill="#000"/><circle cx="13" cy="22" r="0.6" fill="#000"/><circle cx="16" cy="21" r="0.6" fill="#000"/></svg>';
+    if (type === 'snow') return o + cloud + '<line x1="9" y1="21" x2="9" y2="21"/><line x1="12.5" y1="22" x2="12.5" y2="22"/><circle cx="9" cy="21" r="0.6" fill="#000"/><circle cx="13" cy="22" r="0.6" fill="#000"/><circle cx="16" cy="21" r="0.6" fill="#000"/></svg>';
     if (type === 'storm') return o + cloud + '<polygon points="12,18.5 9.5,22.5 11.5,22.5 10,25.5 14,21 12,21" fill="#000" stroke="none"/></svg>';
     return o + '</svg>';
   }
 
+  // ---------- compass ----------
   function compass(deg, s) {
     return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 100 100">'
       + '<circle cx="50" cy="50" r="46" fill="#fff" stroke="#000" stroke-width="3"/>'
@@ -298,6 +275,7 @@
       + '</g></svg>';
   }
 
+  // ---------- sun arc ----------
   function sunArc(frac, w, h) {
     frac = Math.max(0, Math.min(1, frac));
     var rx = (w - 16) / 2, ry = h - 16, cx = w / 2, cy = h - 8;
@@ -310,6 +288,7 @@
       + '</svg>';
   }
 
+  // ---------- UV sparkline ----------
   function sparkline(vals, w, h, nowFrac) {
     if (!vals.length) return '';
     var max = Math.max.apply(null, vals.concat([1]));
@@ -337,6 +316,7 @@
       + '</svg>';
   }
 
+  // ---------- mini month calendar ----------
   function miniCalendar(dt) {
     var year = dt.getFullYear(), month = dt.getMonth(), todayD = dt.getDate();
     var first = new Date(year, month, 1).getDay();
@@ -354,6 +334,7 @@
     return html;
   }
 
+  // ---------- moon phase (computed) ----------
   function moonSVG(frac, waxing, s) {
     var r = s / 2, c = s / 2;
     var cosv = 1 - 2 * frac, rx = Math.abs(cosv) * r;
@@ -384,6 +365,7 @@
     return { frac: frac, waxing: waxing, th: th, en: en, illum: Math.round(frac * 100) };
   }
 
+  // ---------- time helpers ----------
   function hourLabel(iso) {
     var h = parseInt(iso.slice(11, 13), 10);
     if (metric) return h + '';
@@ -397,6 +379,7 @@
     return h12 + ':' + m + ap;
   }
 
+  // ---------- render ----------
   function uvRisk(v) {
     if (v < 3) return ['ต่ำ Low', '#000', '#eee'];
     if (v < 6) return ['ปานกลาง Moderate', '#000', '#eee'];
@@ -405,17 +388,14 @@
     return ['อันตราย Extreme', '#fff', RED];
   }
 
-  var BAR = 'background-image:url(data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%222%22%20height=%222%22%3E%3Crect%20width=%222%22%20height=%222%22%20fill=%22%23fff%22/%3E%3Crect%20width=%221%22%20height=%221%22%20fill=%22%23000%22/%3E%3C/svg%3E);background-color:#fff;';
-
-  var lastData = null;
-
   function render(d) {
-    lastData = d;
     var cur = d.current, H = d.hourly, D = d.daily;
-    var nowIso = cur.time;
+
+    // header / date — use the API's local "now"
+    var nowIso = cur.time;                       // "YYYY-MM-DDTHH:MM"
     var dt = new Date(nowIso);
-    set('cityTH', DETECT.cityTH || DETECT.cityEN);
-    set('cityEN', (DETECT.cityEN || '').toUpperCase());
+    set('cityTH', loc[3] || cityName);
+    set('cityEN', cityName.toUpperCase());
     var alm = computeAlmanac(dt);
     set('monthTH', MONTH_TH[dt.getMonth()]);
     set('beTH', thDigits(dt.getFullYear() + 543));
@@ -428,12 +408,14 @@
     set('bigDay', dt.getDate());
     set('weekday', 'วัน' + WD_TH[dt.getDay()] + ' ' + CN_WD_FULL[dt.getDay()] + ' ' + WD_EN_FULL[dt.getDay()]);
 
+    // current conditions
     var w = wmo(cur.weather_code, cur.is_day);
     el('curIcon').innerHTML = icon(w.ic, 28);
     set('curTemp', Math.round(cur.temperature_2m) + '°C');
     set('curTempC', cToF(cur.temperature_2m) + '°F');
     set('curCondTH', w.th + ' · ' + w.en);
 
+    // wind
     var wd = cur.wind_direction_10m;
     el('windCompass').innerHTML = compass(wd, 46);
     el('windSpeed').textContent = kToMph(cur.wind_speed_10m) + ' mph';
@@ -443,9 +425,11 @@
     set('windTowardTH', 'ลมไปทาง' + THAI_DIR8[toward8]);
     set('windGustTH', 'กระโชก ' + Math.round(cur.wind_gusts_10m) + ' กม/ชม');
 
+    // find current hour index
     var times = H.time, key = nowIso.slice(0, 13), idx = 0;
     for (var i = 0; i < times.length; i++) { if (times[i].slice(0, 13) >= key) { idx = i; break; } }
 
+    // forecast — middle column, more hours
     var NF = 10, tempHtml = '';
     for (var j = idx; j < idx + NF && j < times.length; j++) {
       var ww = wmo(H.weather_code[j], 1);
@@ -456,17 +440,18 @@
     }
     el('hourlyTemp').innerHTML = tempHtml;
 
+    // humidity + precipitation — right column, fewer hours, larger text
     var NR = 7, humHtml = '', precipHtml = '';
     for (var k2 = idx; k2 < idx + NR && k2 < times.length; k2++) {
       var hum = Math.round(H.relative_humidity_2m[k2]);
       humHtml += '<div style="display:flex;align-items:center;gap:6px;font-size:14px;line-height:1;padding:3px 0;">'
         + '<span style="width:26px;color:#000;">' + hourLabel(times[k2]) + '</span>'
-        + '<span style="flex:1;height:8px;' + BAR + 'border-radius:2px;overflow:hidden;"><span style="display:block;height:100%;width:' + hum + '%;background:#000;"></span></span>'
+        + '<span style="flex:1;height:8px;background-image:url(data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%222%22%20height=%222%22%3E%3Crect%20width=%222%22%20height=%222%22%20fill=%22%23fff%22/%3E%3Crect%20width=%221%22%20height=%221%22%20fill=%22%23000%22/%3E%3C/svg%3E);background-color:#fff;border-radius:2px;overflow:hidden;"><span style="display:block;height:100%;width:' + hum + '%;background:#000;"></span></span>'
         + '<span style="width:34px;text-align:right;font-weight:600;">' + hum + '%</span></div>';
       var pp = Math.round((H.precipitation_probability && H.precipitation_probability[k2] != null) ? H.precipitation_probability[k2] : 0);
       precipHtml += '<div style="display:flex;align-items:center;gap:6px;font-size:14px;line-height:1;padding:3px 0;">'
         + '<span style="width:26px;color:#000;">' + hourLabel(times[k2]) + '</span>'
-        + '<span style="flex:1;height:8px;' + BAR + 'border-radius:2px;overflow:hidden;"><span style="display:block;height:100%;width:' + pp + '%;background:#000;"></span></span>'
+        + '<span style="flex:1;height:8px;background-image:url(data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%222%22%20height=%222%22%3E%3Crect%20width=%222%22%20height=%222%22%20fill=%22%23fff%22/%3E%3Crect%20width=%221%22%20height=%221%22%20fill=%22%23000%22/%3E%3C/svg%3E);background-color:#fff;border-radius:2px;overflow:hidden;"><span style="display:block;height:100%;width:' + pp + '%;background:#000;"></span></span>'
         + '<span style="width:34px;text-align:right;font-weight:600;">' + pp + '%</span></div>';
     }
     el('humCol').innerHTML = humHtml;
@@ -474,6 +459,7 @@
     var psum = (D.precipitation_sum && D.precipitation_sum[0] != null) ? D.precipitation_sum[0] : 0;
     set('precipSum', 'วันนี้ ' + psum.toFixed(1) + ' มม · ' + mmToIn(psum).toFixed(2) + ' in');
 
+    // UV daylight curve (today, sunrise→sunset)
     var today = nowIso.slice(0, 10);
     var srH = parseInt(D.sunrise[0].slice(11, 13), 10), ssH = parseInt(D.sunset[0].slice(11, 13), 10);
     var uvVals = [];
@@ -493,6 +479,7 @@
     var rEl = el('uvRisk'); rEl.textContent = rk[0]; rEl.style.color = rk[1]; rEl.style.background = rk[2];
     el('miniCal').innerHTML = miniCalendar(dt);
 
+    // sun arc
     set('sunriseT', hhmm(D.sunrise[0]));
     set('sunsetT', hhmm(D.sunset[0]));
     var srMin = srH * 60 + parseInt(D.sunrise[0].slice(14, 16), 10);
@@ -500,111 +487,25 @@
     var nowMin = dt.getHours() * 60 + dt.getMinutes();
     el('sunArc').innerHTML = sunArc((nowMin - srMin) / (ssMin - srMin), 120, 44);
 
-    var moon = moonInfo(dt);
-    el('moonIcon').innerHTML = moonSVG(moon.frac, moon.waxing, 40);
-    set('moonPhaseTH', moon.th); set('moonPhaseEN', moon.en); set('moonIllum', moon.illum + '%');
+    // moon
+    var mi = moonInfo(dt);
+    el('moonIcon').innerHTML = moonSVG(mi.frac, mi.waxing, 40);
+    set('moonPhaseTH', mi.th); set('moonPhaseEN', mi.en); set('moonIllum', mi.illum + '%');
     set('updatedT', hhmm(nowIso));
   }
 
-  // ---------- weather fetch ----------
-  function fetchWeather() {
-    var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + DETECT.lat + '&longitude=' + DETECT.lon
-      + '&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,is_day,wind_speed_10m,wind_direction_10m,wind_gusts_10m'
-      + '&hourly=temperature_2m,relative_humidity_2m,uv_index,weather_code,precipitation_probability,precipitation'
-      + '&daily=sunrise,sunset,uv_index_max,temperature_2m_max,temperature_2m_min,precipitation_sum'
-      + '&timezone=auto&forecast_days=2&temperature_unit=celsius&wind_speed_unit=kmh&precipitation_unit=mm';
-    return fetch(url).then(function (r) { return r.json(); }).then(render).catch(function () {
-      set('curCondTH', 'โหลดไม่สำเร็จ data error');
-    });
-  }
+  // ---------- fetch ----------
+  var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + loc[0] + '&longitude=' + loc[1]
+    + '&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,is_day,wind_speed_10m,wind_direction_10m,wind_gusts_10m'
+    + '&hourly=temperature_2m,relative_humidity_2m,uv_index,weather_code,precipitation_probability,precipitation'
+    + '&daily=sunrise,sunset,uv_index_max,temperature_2m_max,temperature_2m_min,precipitation_sum'
+    + '&timezone=auto&forecast_days=2&temperature_unit=celsius&wind_speed_unit=kmh&precipitation_unit=mm';
 
-  // ---------- location auto-detect ----------
-  function reverseGeocode(lat, lon, lang) {
-    return fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' + lat + '&longitude=' + lon + '&localityLanguage=' + lang)
-      .then(function (r) { return r.json(); });
-  }
-  function applyNames(lat, lon, fallbackEN) {
-    return Promise.all([
-      reverseGeocode(lat, lon, 'en').catch(function () { return {}; }),
-      reverseGeocode(lat, lon, 'th').catch(function () { return {}; })
-    ]).then(function (res) {
-      var en = res[0] || {}, th = res[1] || {};
-      var cityEN = en.city || en.locality || en.principalSubdivision || fallbackEN || '';
-      var cityTH = th.city || th.locality || th.principalSubdivision || cityEN;
-      DETECT.lat = lat; DETECT.lon = lon;
-      if (cityEN) DETECT.cityEN = cityEN;
-      if (cityTH) DETECT.cityTH = cityTH;
-    });
-  }
-  function ipFallback() {
-    return fetch('https://ipwho.is/').then(function (r) { return r.json(); }).then(function (j) {
-      if (j && j.success && j.latitude != null) {
-        return applyNames(j.latitude, j.longitude, j.city || '');
-      }
-    }).catch(function () {});
-  }
-  function detectLocation() {
-    return new Promise(function (resolve) {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          function (p) { hidePerm(); applyNames(p.coords.latitude, p.coords.longitude, '').then(resolve, resolve); },
-          function (err) { if (err && err.code === 1) { showPerm(); } ipFallback().then(resolve, resolve); },
-          { timeout: 7000, maximumAge: 600000, enableHighAccuracy: false }
-        );
-      } else {
-        ipFallback().then(resolve, resolve);
-      }
-    });
-  }
-
-  // ---------- loading overlay + permission prompt ----------
-  function setBar(pct) { var b = el('loadBar'); if (b) b.style.width = pct + '%'; }
-  function setLoad(th, en, pct) { set('loadMsgTH', th); set('loadMsgEN', en); if (pct != null) setBar(pct); }
-  function showLoader() { var l = el('loader'); if (l) { l.style.display = 'flex'; l.style.opacity = '1'; } }
-  function hideLoader() {
-    var l = el('loader'); if (!l) return;
-    setBar(100);
-    l.style.opacity = '0';
-    setTimeout(function () { l.style.display = 'none'; }, 460);
-  }
-  function showPerm() { var p = el('permPrompt'); if (p) p.style.display = 'flex'; }
-  function hidePerm() { var p = el('permPrompt'); if (p) p.style.display = 'none'; }
-
-  // ---------- scale to fit viewport ----------
-  function fit() {
-    var s = Math.min(window.innerWidth / 480, window.innerHeight / 800);
-    document.getElementById('stage').style.transform = 'scale(' + Math.min(s, 1) + ')';
-  }
-  window.addEventListener('resize', fit);
-  fit();
-
-  // re-render once webfonts are ready (fixes fallback-metric reflow)
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(function () { if (lastData) render(lastData); });
-  }
-
-  // ---------- boot: show progress through detect → fetch → done ----------
-  function boot() {
-    showLoader();
-    // explicit override via URL → skip geolocation entirely (works on plain http)
-    if (queryOverride()) {
-      setLoad('ดึงข้อมูลอากาศ', 'Fetching weather data', 60);
-      return fetchWeather().then(function () { hideLoader(); });
-    }
-    setLoad('กำลังหาตำแหน่ง', 'Finding your location', 35);
-    return detectLocation().then(function () {
-      setLoad('ดึงข้อมูลอากาศ', 'Fetching weather data', 70);
-      return fetchWeather();
-    }).then(function () {
-      hideLoader();
-    });
-  }
-  window.__retryLoc = function () { hidePerm(); boot(); };
-
-  boot();
-  // refresh every 15 min so the clock / now-markers stay live
-  setInterval(fetchWeather, 15 * 60 * 1000);
+  fetch(url).then(function (r) { return r.json(); }).then(render).catch(function (e) {
+    set('curCondTH', 'โหลดไม่สำเร็จ data error');
+  });
 })();
 </script>
+
 </body>
 </html>
