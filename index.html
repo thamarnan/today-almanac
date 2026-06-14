@@ -187,6 +187,39 @@
   // ---------- auto-detected location (defaults to Rowland Heights) ----------
   var DETECT = { lat: 33.976, lon: -117.905, cityEN: 'Rowland Heights', cityTH: 'โรว์แลนด์ไฮตส์' };
 
+  // built-in cities for ?city= override (works on plain http, no geolocation needed)
+  var CITY = {
+    'rowland heights': [33.976, -117.905, 'โรว์แลนด์ไฮตส์', 'Rowland Heights'],
+    'irvine': [33.6846, -117.8265, 'เออร์ไวน์', 'Irvine'],
+    'la crescenta': [34.2322, -118.2390, 'ลาเครสเซนตา', 'La Crescenta'],
+    'bangkok': [13.7563, 100.5018, 'กรุงเทพฯ', 'Bangkok'],
+    'phuket': [7.8804, 98.3923, 'ภูเก็ต', 'Phuket'],
+    'krabi': [8.0863, 98.9063, 'กระบี่', 'Krabi'],
+    'los angeles': [34.0522, -118.2437, 'ลอสแอนเจลิส', 'Los Angeles'],
+    'new york': [40.7128, -74.0060, 'นิวยอร์ก', 'New York'],
+    'london': [51.5072, -0.1276, 'ลอนดอน', 'London'],
+    'tokyo': [35.6762, 139.6503, 'โตเกียว', 'Tokyo'],
+    'singapore': [1.3521, 103.8198, 'สิงคโปร์', 'Singapore']
+  };
+
+  // ?lat=..&lon=..&name=..  or  ?city=Bangkok  pins location without geolocation
+  function queryOverride() {
+    var p = new URLSearchParams(location.search);
+    var lat = parseFloat(p.get('lat')), lon = parseFloat(p.get('lon'));
+    if (!isNaN(lat) && !isNaN(lon)) {
+      DETECT.lat = lat; DETECT.lon = lon;
+      DETECT.cityEN = p.get('name') || 'Custom';
+      DETECT.cityTH = p.get('name') || DETECT.cityEN;
+      return true;
+    }
+    var city = p.get('city');
+    if (city) {
+      var c = CITY[city.toLowerCase().trim()];
+      if (c) { DETECT.lat = c[0]; DETECT.lon = c[1]; DETECT.cityTH = c[2]; DETECT.cityEN = c[3]; return true; }
+    }
+    return false;
+  }
+
   // display config (English-primary / Thai-secondary, 12-hour clock)
   var metric = false;
 
@@ -553,6 +586,11 @@
   // ---------- boot: show progress through detect → fetch → done ----------
   function boot() {
     showLoader();
+    // explicit override via URL → skip geolocation entirely (works on plain http)
+    if (queryOverride()) {
+      setLoad('ดึงข้อมูลอากาศ', 'Fetching weather data', 60);
+      return fetchWeather().then(function () { hideLoader(); });
+    }
     setLoad('กำลังหาตำแหน่ง', 'Finding your location', 35);
     return detectLocation().then(function () {
       setLoad('ดึงข้อมูลอากาศ', 'Fetching weather data', 70);
